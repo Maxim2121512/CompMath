@@ -2,12 +2,13 @@ import numpy as np
 
 
 # B[0] - амплитуда, B[1] - частота, B[2] - фаза 
-B = np.array([5.217, 94.893, 1.723])
+#B = np.array([5.217, 94.893, 1.723])
+B = np.array([7.001, 95.1, 1.999])
 
 # массив временных меток от start_time до end_time с частотой дискретизации sample_rate
 start_time = 0
 end_time = 1
-sample_rate = 2000
+sample_rate = 2048
 times = np.arange(start_time, end_time, 1/sample_rate)
 
 # lamda-функция для вычисления значений сигнала 
@@ -22,6 +23,7 @@ errors = np.random.normal(0, 1, len(times)) * max_error
 signal = calc_signals(B, times) + errors
 
 
+'''
 # Дискретное преобразование Фурье
 def dft(signal):
     N = len(signal)
@@ -32,10 +34,28 @@ def dft(signal):
             X[k] += signal[n] * np.exp(-2j * np.pi * k * n / N)
     
     return X
+'''
+
+
+
+# Алгоритм быстрого преобразования Фурье Cooley-Tukey 
+def fft(x):
+    N = len(x)
+
+    if (N == 1):
+        return x
+    else:
+        x_even = fft(x[::2])
+        x_odd = fft(x[1::2])
+
+        factor = np.exp(-2j * np.pi * np.arange(N) / N)
+        
+        return np.concatenate([x_even + factor[:N // 2] * x_odd, x_even + factor[N // 2:] * x_odd])
+        
 
 # Поиск частоты сигнала
 def find_freq(signal, sample_rate):
-    spectrum = dft(signal)
+    spectrum = fft(signal)
     spectrum_magnitude = np.abs(spectrum)
 
     # поиск индекса элемента с максимальной амплитудой в первой половине спектра
@@ -127,7 +147,8 @@ def least_squares(y, X):
     x = backward_substitution(C=C, y=y)
 
     amplitude = np.sqrt(x[0]**2 + x[1]**2)
-    phase = np.arctan(x[1] / x[0])
+    #phase = np.arctan(x[1] / x[0])
+    phase = np.arctan2(x[1], x[0])
 
     return amplitude, phase
 
